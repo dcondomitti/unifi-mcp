@@ -33,7 +33,7 @@ _TITLE_WORDS = {
     "wlan": "WLAN",
 }
 
-_TOOL_PREFIXES = ("unifi_", "protect_", "access_")
+_TOOL_PREFIXES = ("unifi_", "protect_", "access_", "talk_")
 
 _ICON_CACHE: dict[str, tuple[Icon, ...]] = {}
 

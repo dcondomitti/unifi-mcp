@@ -16,6 +16,7 @@ members = [
     "unifi-mcp-shared",
     "unifi-network-mcp",
     "unifi-protect-mcp",
+    "unifi-talk-mcp",
 ]
 
 [[package]]
@@ -2245,6 +2246,68 @@ requires-dist = [
     { name = "starlette", specifier = ">=1.7.0" },
     { name = "typing-extensions", specifier = ">=4.16.0" },
     { name = "unifi-core", extras = ["protect"], editable = "packages/unifi-core" },
+    { name = "unifi-mcp-shared", editable = "packages/unifi-mcp-shared" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "aioresponses", specifier = ">=0.7.9" },
+    { name = "pytest", specifier = ">=9.0.3" },
+    { name = "pytest-asyncio", specifier = ">=0.21.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.0" },
+    { name = "ruff", specifier = ">=0.16.6" },
+]
+
+[[package]]
+name = "unifi-talk-mcp"
+source = { editable = "apps/talk" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "anyio" },
+    { name = "click" },
+    { name = "cryptography" },
+    { name = "jsonschema" },
+    { name = "mcp", extra = ["cli"] },
+    { name = "omegaconf" },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "pyyaml" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+    { name = "unifi-core" },
+    { name = "unifi-mcp-shared" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "aioresponses" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.14.3" },
+    { name = "anyio", specifier = ">=4.14.2" },
+    { name = "click", specifier = ">=8.3.3" },
+    { name = "cryptography", specifier = ">=50.0.1" },
+    { name = "jsonschema", specifier = ">=4.17.0" },
+    { name = "mcp", extras = ["cli"], specifier = ">=2.2.0,<3" },
+    { name = "omegaconf", specifier = ">=2.3.0" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
+    { name = "pyjwt", specifier = ">=2.13.0" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "python-multipart", specifier = ">=0.0.31" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "starlette", specifier = ">=1.7.0" },
+    { name = "typing-extensions", specifier = ">=4.16.0" },
+    { name = "unifi-core", editable = "packages/unifi-core" },
     { name = "unifi-mcp-shared", editable = "packages/unifi-mcp-shared" },
 ]
 
