@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 _REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
 
+# Talk reports a missing manage permission as HTTP 500 with this fixed text.
+_MANAGE_PERMISSION_MARKER = "manage permissions"
+_ERROR_BODY_LIMIT = 512
+
 
 class TalkConnectionManager:
     """Manages the UniFi OS session used to reach the Talk application.
@@ -175,11 +179,28 @@ class TalkConnectionManager:
         if resp.status == 401:
             raise UniFiAuthError(f"{operation} failed: HTTP 401 after re-authentication")
         if resp.status != 200:
+            if await TalkConnectionManager._is_manage_permission_error(resp):
+                raise UniFiPermissionError(
+                    f"{operation} failed: the account needs Talk manage (Full Management) permission."
+                )
             raise UniFiConnectionError(f"{operation} failed: HTTP {resp.status}")
         try:
             return await resp.json(content_type=None)
         except ValueError as exc:
             raise UniFiConnectionError(f"{operation} failed: response was not JSON") from exc
+
+    @staticmethod
+    async def _is_manage_permission_error(resp: aiohttp.ClientResponse) -> bool:
+        """Return whether an error body is Talk's fixed manage-permission message.
+
+        Only the marker is checked; the body is never surfaced, since other
+        Talk error bodies can echo phone numbers and names.
+        """
+        try:
+            body = await resp.content.read(_ERROR_BODY_LIMIT)
+        except Exception:
+            return False
+        return _MANAGE_PERMISSION_MARKER in body.decode("utf-8", "replace")
 
     # ------------------------------------------------------------------
     # Properties

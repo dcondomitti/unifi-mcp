@@ -14,6 +14,7 @@ EXPECTED_TOOLS = {
     "talk_list_users": "users",
     "talk_list_numbers": "numbers",
     "talk_list_blocked_numbers": "numbers",
+    "talk_list_all_calls": "calls",
     "talk_list_calls": "calls",
     "talk_get_call_flow": "calls",
     "talk_get_voicemail": "calls",

@@ -1,7 +1,7 @@
 """Call tools for UniFi Talk MCP server.
 
-Call log, call-flow timelines, voicemail metadata and transcripts. The call log
-is per-user; a voicemail shares its uuid with the call that left it.
+Call log, call-flow timelines, voicemail metadata and transcripts. A voicemail
+shares its uuid with the call that left it.
 """
 
 import logging
@@ -11,7 +11,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from unifi_core.exceptions import UniFiNotFoundError
-from unifi_core.talk.managers.call_manager import MAX_CALL_PAGE
+from unifi_core.talk.managers.call_manager import ALL_CALLS_PAGE_SIZE, MAX_CALL_PAGE
 from unifi_core.talk.models.calls import (
     call_event_from_controller,
     call_from_controller,
@@ -23,12 +23,43 @@ logger = logging.getLogger(__name__)
 
 
 @server.tool(
+    name="talk_list_all_calls",
+    description=(
+        "Lists calls across the whole Talk system, newest first, with direction, status, time, duration, "
+        "numbers, caller name, who answered, and has_voicemail. Returns "
+        f"{ALL_CALLS_PAGE_SIZE} calls per zero-based page; total_count is the system-wide call count. "
+        "Use talk_list_calls for one user's history."
+    ),
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+    permission_category="call",
+    permission_action="read",
+    auth="local_only",
+)
+async def talk_list_all_calls(
+    page: Annotated[int, Field(description="Zero-based page number.", ge=0)] = 0,
+) -> Dict[str, Any]:
+    """List calls across the whole Talk system."""
+    logger.info("talk_list_all_calls tool called")
+    try:
+        result = await call_manager.list_all_calls(page)
+        calls = [call_from_controller(c).model_dump(exclude_none=True) for c in result["calls"]]
+        return {
+            "success": True,
+            "data": {"calls": calls, "count": len(calls), "total_count": result["total_count"], "page": page},
+        }
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    except Exception as e:
+        logger.error("Failed to list all Talk calls: %s", type(e).__name__, exc_info=True)
+        return {"success": False, "error": f"Failed to list all Talk calls: {e}"}
+
+
+@server.tool(
     name="talk_list_calls",
     description=(
         "Lists one user's call history, newest first, with direction, status, time, duration, numbers, "
-        "recording flag, and quality score. Talk has no console-wide call log: call this once per user "
-        "(user_id is the unique_id from talk_list_users). Paginate with limit/offset; total_count is the "
-        "user's full call count."
+        "recording flag, and quality score. user_id is the unique_id from talk_list_users. Paginate with "
+        "limit/offset; total_count is the user's full call count. Use talk_list_all_calls for every user."
     ),
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
     permission_category="call",

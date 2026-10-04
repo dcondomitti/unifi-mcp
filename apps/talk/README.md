@@ -7,7 +7,7 @@ Read-only MCP server for [UniFi Talk](https://ui.com/talk): phones, users, phone
 ## Requirements
 
 - A UniFi OS console running the Talk application
-- A **local** admin account with Talk view permission (cloud SSO accounts with 2FA cannot log in over the local API)
+- A **local** admin account with Talk view permission (cloud SSO accounts with 2FA cannot log in over the local API). Some Talk data, such as the system log and per-area settings, needs Talk manage permission; Talk reports a missing permission as HTTP 500, which this server surfaces as a permission error
 - Python 3.13+
 
 Talk has no API-key surface, so username and password are required.
@@ -40,14 +40,14 @@ make -C apps/talk run
 | `devices` | `talk_list_devices`, `talk_get_device` |
 | `users` | `talk_list_users` |
 | `numbers` | `talk_list_numbers`, `talk_list_blocked_numbers` |
-| `calls` | `talk_list_calls`, `talk_get_call_flow`, `talk_get_voicemail`, `talk_get_call_transcript` |
+| `calls` | `talk_list_all_calls`, `talk_list_calls`, `talk_get_call_flow`, `talk_get_voicemail`, `talk_get_call_transcript` |
 | `callflow` | `talk_list_groups`, `talk_get_switchboard`, `talk_list_ring_flows`, `talk_list_call_queues`, `talk_list_parking_lots`, `talk_list_contacts`, `talk_list_recording_rules` |
 
 All tools are read-only.
 
 ### Call log and voicemail
 
-Talk's call log is per-user: `talk_list_calls` takes a `user_id` (the `unique_id` from `talk_list_users`) and paginates with `limit`/`offset`. A voicemail shares its `uuid` with the call that left it, so pass a call's `uuid` to `talk_get_voicemail`. Use `talk_get_call_flow` to see whether a call was sent to voicemail. Voicemail audio is not returned.
+`talk_list_all_calls` returns every call on the console, 50 per zero-based `page`, and flags calls that left a voicemail with `has_voicemail`. `talk_list_calls` returns one user's history: it takes a `user_id` (the `unique_id` from `talk_list_users`) and paginates with `limit`/`offset`. A voicemail shares its `uuid` with the call that left it, so pass a call's `uuid` to `talk_get_voicemail`. Voicemail audio is not returned.
 
 ### Privacy
 

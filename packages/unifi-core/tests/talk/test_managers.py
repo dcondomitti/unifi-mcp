@@ -77,6 +77,24 @@ async def test_call_manager_list_calls_paginates(cm):
     assert await mgr.list_calls("u1") == {"calls": [], "total_count": 0}
 
 
+async def test_call_manager_list_all_calls(cm):
+    mgr = CallManager(cm)
+    cm.request.return_value = {"records": [{"uuid": "c1"}, "junk"], "total_count": "57"}
+    assert await mgr.list_all_calls(page=1) == {"calls": [{"uuid": "c1"}], "total_count": 57}
+    assert cm.request.await_args.args == ("GET", "call_log")
+    assert cm.request.await_args.kwargs["params"] == {"page": 1}
+
+    cm.request.return_value = {"records": [], "total_count": None}
+    assert await mgr.list_all_calls() == {"calls": [], "total_count": None}
+    cm.request.return_value = None
+    assert await mgr.list_all_calls() == {"calls": [], "total_count": None}
+
+    cm.request.reset_mock()
+    with pytest.raises(ValueError, match="page must be"):
+        await mgr.list_all_calls(page=-1)
+    cm.request.assert_not_awaited()
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [

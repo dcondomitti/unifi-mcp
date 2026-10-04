@@ -12,7 +12,7 @@ class TalkCall(TalkModel):
 
     uuid: Optional[str] = ro("Call identifier; pass as call_id to the call flow, voicemail and transcript tools")
     direction: Optional[str] = ro("Call direction: 'in' or 'out'")
-    status: Optional[str] = ro("Call outcome reported by Talk (e.g. 'accepted')")
+    status: Optional[str] = ro("Call outcome reported by Talk (e.g. 'accepted', 'cancelled')")
     time: Optional[str] = ro("Call start time")
     duration: Optional[int] = ro("Call duration in seconds")
     from_number: Optional[str] = ro("Caller number or extension")
@@ -24,6 +24,12 @@ class TalkCall(TalkModel):
     recording: Optional[bool] = ro("Whether a recording exists for the call")
     quality_score: Optional[int] = ro("Call quality score")
     is_video_call: Optional[bool] = ro("Whether the call was a video call")
+    is_intercom_call: Optional[bool] = ro("Whether the call was an intercom call")
+    from_caller_name: Optional[str] = ro("Caller name, when known")
+    answered_by: Optional[str] = ro("Name or extension of whoever answered")
+    country: Optional[str] = ro("Country of the external party")
+    to_smart_attendant_title: Optional[str] = ro("Smart attendant the call was routed to")
+    has_voicemail: Optional[bool] = ro("Whether the call left a voicemail (console-wide call log only)")
 
 
 class TalkCallEvent(TalkModel):
@@ -58,7 +64,12 @@ READ_ONLY_FIELDS: frozenset[str] = (
 def call_from_controller(raw: Any) -> TalkCall:
     """Build a TalkCall from a ``call_log/user/{id}`` entry."""
     data = as_dict(raw)
-    return build(TalkCall, {**data, "from_number": data.get("from"), "to_number": data.get("to")})
+    # Only the console-wide log carries vm_data; leave has_voicemail unset elsewhere.
+    has_voicemail = bool(data["vm_data"]) if "vm_data" in data else None
+    return build(
+        TalkCall,
+        {**data, "from_number": data.get("from"), "to_number": data.get("to"), "has_voicemail": has_voicemail},
+    )
 
 
 def call_event_from_controller(raw: Any) -> TalkCallEvent:

@@ -19,6 +19,11 @@ class FakeResponse:
         self.status = status
         self._body = body
         self.headers = headers or {}
+        self.content = self
+
+    async def read(self, limit: int = -1) -> bytes:
+        data = self._body.encode()
+        return data if limit < 0 else data[:limit]
 
     async def json(self, content_type: Any = None) -> Any:
         return json.loads(self._body)
@@ -136,6 +141,15 @@ async def test_request_maps_http_errors_without_echoing_body(connect, status, ex
     assert "Get Talk voicemail failed" in str(info.value)
     assert "+15551234567" not in str(info.value)
     assert "Jane" not in str(info.value)
+
+
+async def test_manage_permission_message_on_500_becomes_permission_error(connect):
+    cm, _ = await connect(FakeResponse(status=500, body="You don't have manage permissions for this action"))
+    with pytest.raises(UniFiPermissionError) as info:
+        await cm.request("GET", "system_log/list", operation="List Talk system log")
+    assert str(info.value) == (
+        "List Talk system log failed: the account needs Talk manage (Full Management) permission."
+    )
 
 
 async def test_request_rejects_non_json_body(connect):

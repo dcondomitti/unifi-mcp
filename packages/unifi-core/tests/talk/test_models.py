@@ -97,6 +97,15 @@ def test_call_models():
     assert voicemail.duration == "12"
 
 
+def test_call_model_has_voicemail_only_set_by_console_wide_log():
+    assert calls.call_from_controller({"uuid": "c1"}).has_voicemail is None
+    assert calls.call_from_controller({"uuid": "c1", "vm_data": {}}).has_voicemail is False
+    with_vm = calls.call_from_controller(
+        {"uuid": "c1", "vm_data": {"uuid": "c1", "file_path": "/vm/c1.wav"}, "call_events": [{"event": "x"}]}
+    ).model_dump(exclude_none=True)
+    assert with_vm == {"uuid": "c1", "has_voicemail": True}
+
+
 def test_group_model_normalizes_null_lists():
     group = groups.from_controller({"id": 4, "name": "Sales", "member_list": None, "did_list": ["+15551234567"]})
     assert group.member_list == []

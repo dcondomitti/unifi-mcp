@@ -1,5 +1,5 @@
 {
-  "count": 26,
+  "count": 27,
   "generated_by": "scripts/generate_tool_manifest.py",
   "module_map": {
     "talk_get_call_flow": "unifi_talk_mcp.tools.calls",
@@ -12,6 +12,7 @@
     "talk_get_system_info": "unifi_talk_mcp.tools.system",
     "talk_get_usage": "unifi_talk_mcp.tools.system",
     "talk_get_voicemail": "unifi_talk_mcp.tools.calls",
+    "talk_list_all_calls": "unifi_talk_mcp.tools.calls",
     "talk_list_blocked_numbers": "unifi_talk_mcp.tools.numbers",
     "talk_list_call_queues": "unifi_talk_mcp.tools.callflow",
     "talk_list_calls": "unifi_talk_mcp.tools.calls",
@@ -1104,6 +1105,99 @@
         "readOnlyHint": true
       },
       "auth_method": "local_only",
+      "description": "Lists calls across the whole Talk system, newest first, with direction, status, time, duration, numbers, caller name, who answered, and has_voicemail. Returns 50 calls per zero-based page; total_count is the system-wide call count. Use talk_list_calls for one user's history.",
+      "name": "talk_list_all_calls",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "page": {
+              "description": "Zero-based page number.",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List All Calls"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
       "description": "Lists caller numbers that are blocked from reaching the Talk system.",
       "name": "talk_list_blocked_numbers",
       "permission_action": "read",
@@ -1278,7 +1372,7 @@
         "readOnlyHint": true
       },
       "auth_method": "local_only",
-      "description": "Lists one user's call history, newest first, with direction, status, time, duration, numbers, recording flag, and quality score. Talk has no console-wide call log: call this once per user (user_id is the unique_id from talk_list_users). Paginate with limit/offset; total_count is the user's full call count.",
+      "description": "Lists one user's call history, newest first, with direction, status, time, duration, numbers, recording flag, and quality score. user_id is the unique_id from talk_list_users. Paginate with limit/offset; total_count is the user's full call count. Use talk_list_all_calls for every user.",
       "name": "talk_list_calls",
       "permission_action": "read",
       "permission_category": "call",

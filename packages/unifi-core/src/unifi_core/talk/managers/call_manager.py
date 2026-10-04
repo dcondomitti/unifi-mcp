@@ -1,13 +1,14 @@
 """Call log and voicemail reads for UniFi Talk.
 
 Paths (relative to ``/proxy/talk/api/``):
+- ``call_log?page=`` -- every call on the console, newest first, 50 per zero-based page;
+  each record embeds its event timeline and, when present, voicemail metadata
 - ``call_log/user/{user_id}?limit=&offset=`` -- one user's calls, newest first
 - ``call_log/flow/{call_uuid}`` -- event timeline for one call
 - ``voicemail/data/{call_uuid}`` -- voicemail metadata for a call that went to voicemail
 - ``transcript/by_call_uuid?call_uuid=&transcript_source=call`` -- call transcript
 
-The call log is per-user: Talk has no console-wide call list endpoint. A
-voicemail shares its ``uuid`` with the call that produced it, so voicemails
+A voicemail shares its ``uuid`` with the call that produced it, so voicemails
 are reached from call-log entries.
 """
 
@@ -19,6 +20,7 @@ from unifi_core.exceptions import UniFiNotFoundError
 from unifi_core.talk.managers.connection_manager import TalkConnectionManager
 
 MAX_CALL_PAGE = 100
+ALL_CALLS_PAGE_SIZE = 50
 
 
 class CallManager:
@@ -26,6 +28,21 @@ class CallManager:
 
     def __init__(self, connection_manager: TalkConnectionManager) -> None:
         self._cm = connection_manager
+
+    async def list_all_calls(self, page: int = 0) -> Dict[str, Any]:
+        """Return ``{"calls": [...], "total_count": int | None}`` for one console-wide page."""
+        if page < 0:
+            raise ValueError("page must be 0 or greater")
+        data = await self._cm.request("GET", "call_log", operation="List all Talk calls", params={"page": page})
+        if not isinstance(data, dict):
+            return {"calls": [], "total_count": None}
+        records = data.get("records")
+        calls = [c for c in records if isinstance(c, dict)] if isinstance(records, list) else []
+        try:
+            total = int(data.get("total_count"))
+        except (TypeError, ValueError):
+            total = None
+        return {"calls": calls, "total_count": total}
 
     async def list_calls(self, user_id: str, limit: int = 25, offset: int = 0) -> Dict[str, Any]:
         """Return ``{"calls": [...], "total_count": int}`` for one user."""

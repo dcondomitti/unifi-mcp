@@ -142,6 +142,40 @@ async def test_list_calls_passes_pagination_and_reports_total():
     }
 
 
+async def test_list_all_calls_reports_page_total_and_voicemail_flag():
+    result_page = {"calls": [{"uuid": "c1", "from": "100", "to": "101", "vm_data": {"uuid": "c1"}}], "total_count": 57}
+    with patch("unifi_talk_mcp.tools.calls.call_manager") as manager:
+        manager.list_all_calls = AsyncMock(return_value=result_page)
+        from unifi_talk_mcp.tools.calls import talk_list_all_calls
+
+        result = await talk_list_all_calls(page=1)
+        manager.list_all_calls.assert_awaited_once_with(1)
+        assert result == {
+            "success": True,
+            "data": {
+                "calls": [{"uuid": "c1", "from_number": "100", "to_number": "101", "has_voicemail": True}],
+                "count": 1,
+                "total_count": 57,
+                "page": 1,
+            },
+        }
+
+        manager.list_all_calls = AsyncMock(side_effect=ValueError("page must be 0 or greater"))
+        assert await talk_list_all_calls(page=-1) == {"success": False, "error": "page must be 0 or greater"}
+
+
+async def test_permission_error_is_actionable():
+    from unifi_core.exceptions import UniFiPermissionError
+
+    message = "Get Talk settings failed: the account needs Talk manage (Full Management) permission."
+    with patch("unifi_talk_mcp.tools.system.system_manager") as manager:
+        manager.get_settings = AsyncMock(side_effect=UniFiPermissionError(message))
+        from unifi_talk_mcp.tools.system import talk_get_settings
+
+        result = await talk_get_settings()
+    assert result == {"success": False, "error": f"Failed to get Talk settings: {message}"}
+
+
 async def test_list_calls_validation_error_is_returned_not_raised():
     with patch("unifi_talk_mcp.tools.calls.call_manager") as manager:
         manager.list_calls = AsyncMock(side_effect=ValueError("user_id is required"))
