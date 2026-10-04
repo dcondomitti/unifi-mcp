@@ -1,0 +1,41 @@
+{
+  "name": "unifi-talk",
+  "version": "0.0.1-fork.1",
+  "description": "UniFi Talk MCP server — read-only access to phones, users, numbers, call history, voicemail, and call routing (experimental)",
+  "author": {
+    "name": "dcondomitti",
+    "url": "https://github.com/dcondomitti"
+  },
+  "license": "MIT",
+  "keywords": [
+    "unifi",
+    "talk",
+    "voip",
+    "phones",
+    "mcp"
+  ],
+  "mcpServers": {
+    "unifi-talk": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec uv run --quiet --project \"${UNIFI_MCP_CHECKOUT:-$HOME/projects/unifi-mcp-local}\" --package unifi-talk-mcp unifi-talk-mcp"
+      ],
+      "env": {
+        "UNIFI_HOST": "${UNIFI_TALK_HOST:-}",
+        "UNIFI_USERNAME": "${UNIFI_TALK_USERNAME:-}",
+        "UNIFI_PASSWORD": "${UNIFI_TALK_PASSWORD:-}",
+        "UNIFI_PORT": "${UNIFI_TALK_PORT:-443}",
+        "UNIFI_VERIFY_SSL": "${UNIFI_TALK_VERIFY_SSL:-false}",
+        "UNIFI_TALK_HOST": "${UNIFI_TALK_HOST:-}",
+        "UNIFI_TALK_USERNAME": "${UNIFI_TALK_USERNAME:-}",
+        "UNIFI_TALK_PASSWORD": "${UNIFI_TALK_PASSWORD:-}",
+        "UNIFI_TALK_PASSWORD_FILE": "${UNIFI_TALK_PASSWORD_FILE:-}",
+        "UNIFI_TALK_PASSWORD_COMMAND": "${UNIFI_TALK_PASSWORD_COMMAND:-}",
+        "UNIFI_TALK_PORT": "${UNIFI_TALK_PORT:-443}",
+        "UNIFI_TALK_VERIFY_SSL": "${UNIFI_TALK_VERIFY_SSL:-false}",
+        "UNIFI_TOOL_REGISTRATION_MODE": "${UNIFI_TOOL_REGISTRATION_MODE:-lazy}"
+      }
+    }
+  }
+}

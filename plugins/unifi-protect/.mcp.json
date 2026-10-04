@@ -2,11 +2,10 @@
   "mcpServers": {
     "unifi-protect": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "sh",
       "args": [
-        "--python-preference",
-        "system",
-        "unifi-protect-mcp==0.8.14"
+        "-c",
+        "exec uv run --quiet --project \"${UNIFI_MCP_CHECKOUT:-$HOME/projects/unifi-mcp-local}\" --package unifi-protect-mcp unifi-protect-mcp"
       ],
       "env": {
         "UNIFI_HOST": "${UNIFI_PROTECT_HOST:-}",

@@ -2,11 +2,10 @@
   "mcpServers": {
     "unifi-access": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "sh",
       "args": [
-        "--python-preference",
-        "system",
-        "unifi-access-mcp==0.6.10"
+        "-c",
+        "exec uv run --quiet --project \"${UNIFI_MCP_CHECKOUT:-$HOME/projects/unifi-mcp-local}\" --package unifi-access-mcp unifi-access-mcp"
       ],
       "env": {
         "UNIFI_HOST": "${UNIFI_ACCESS_HOST:-}",

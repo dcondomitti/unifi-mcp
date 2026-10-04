@@ -1,11 +1,10 @@
 {
-  "name": "unifi-plugins",
+  "name": "unifi-plugins-fork",
   "owner": {
-    "name": "sirkirby",
-    "email": "unifi@privatly.net"
+    "name": "dcondomitti"
   },
   "metadata": {
-    "description": "UniFi MCP plugins — manage Ubiquiti UniFi infrastructure from Claude Code, Codex, and OpenClaw"
+    "description": "Fork of the UniFi MCP plugins that runs the servers from a local checkout of dcondomitti/unifi-mcp (branch local)"
   },
   "plugins": [
     {
@@ -13,27 +12,61 @@
       "source": "./plugins/unifi-network",
       "description": "UniFi Network MCP server — manage network devices, clients, firewall, VPN, and more",
       "license": "MIT",
-      "keywords": ["unifi", "network", "firewall", "wifi", "mcp"],
+      "keywords": [
+        "unifi",
+        "network",
+        "firewall",
+        "wifi",
+        "mcp"
+      ],
       "category": "networking",
-      "repository": "https://github.com/sirkirby/unifi-mcp"
+      "repository": "https://github.com/dcondomitti/unifi-mcp"
     },
     {
       "name": "unifi-protect",
       "source": "./plugins/unifi-protect",
       "description": "UniFi Protect MCP server — manage security cameras, NVR, recordings, and smart detections",
       "license": "MIT",
-      "keywords": ["unifi", "protect", "cameras", "nvr", "security", "mcp"],
+      "keywords": [
+        "unifi",
+        "protect",
+        "cameras",
+        "nvr",
+        "security",
+        "mcp"
+      ],
       "category": "networking",
-      "repository": "https://github.com/sirkirby/unifi-mcp"
+      "repository": "https://github.com/dcondomitti/unifi-mcp"
     },
     {
       "name": "unifi-access",
       "source": "./plugins/unifi-access",
       "description": "UniFi Access MCP server — manage door locks, credentials, visitors, and access policies",
       "license": "MIT",
-      "keywords": ["unifi", "access", "doors", "credentials", "mcp"],
+      "keywords": [
+        "unifi",
+        "access",
+        "doors",
+        "credentials",
+        "mcp"
+      ],
       "category": "networking",
-      "repository": "https://github.com/sirkirby/unifi-mcp"
+      "repository": "https://github.com/dcondomitti/unifi-mcp"
+    },
+    {
+      "name": "unifi-talk",
+      "source": "./plugins/unifi-talk",
+      "description": "UniFi Talk MCP server — read-only phones, users, numbers, call history, voicemail, and call routing (experimental)",
+      "license": "MIT",
+      "keywords": [
+        "unifi",
+        "talk",
+        "voip",
+        "phones",
+        "mcp"
+      ],
+      "category": "networking",
+      "repository": "https://github.com/dcondomitti/unifi-mcp"
     }
   ]
 }

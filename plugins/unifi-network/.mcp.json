@@ -2,11 +2,10 @@
   "mcpServers": {
     "unifi-network": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "sh",
       "args": [
-        "--python-preference",
-        "system",
-        "unifi-network-mcp==0.36.2"
+        "-c",
+        "exec uv run --quiet --project \"${UNIFI_MCP_CHECKOUT:-$HOME/projects/unifi-mcp-local}\" --package unifi-network-mcp unifi-network-mcp"
       ],
       "env": {
         "UNIFI_HOST": "${UNIFI_NETWORK_HOST:-}",
