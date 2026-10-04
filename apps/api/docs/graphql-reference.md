@@ -2472,6 +2472,7 @@ type Wlan {
   scheduleWithDuration: [WlanScheduleWindow!]
   l2Isolation: Boolean
   wlanBand: String
+  wlanBands: [String!]
   multicastEnhanceEnabled: Boolean
   dtimMode: String
   dtimNa: Int

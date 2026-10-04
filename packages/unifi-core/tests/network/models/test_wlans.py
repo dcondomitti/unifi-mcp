@@ -7,10 +7,12 @@ from unifi_core.network.models.wlans import (
     MUTABLE_FIELDS,
     READ_ONLY_FIELDS,
     Wlan,
+    apply_band_dependencies,
     apply_update_dependencies,
     from_controller,
     to_controller_create,
     to_controller_update,
+    validate_band_security,
     validate_create,
     validate_update,
 )
@@ -495,3 +497,86 @@ class TestSettingPreference:
                     "setting_preference": "manual",
                 }
             )
+
+
+class TestWlanBands:
+    """wlan_bands carries 6GHz; the legacy wlan_band selector cannot."""
+
+    def test_wlan_bands_is_mutable_and_round_trips(self) -> None:
+        assert "wlan_bands" in MUTABLE_FIELDS
+        wlan = from_controller({"_id": "w1", "wlan_band": "both", "wlan_bands": ["2g", "5g", "6g"]})
+        assert wlan.wlan_bands == ["2g", "5g", "6g"]
+
+    def test_validate_update_accepts_and_canonicalizes_wlan_bands(self) -> None:
+        assert validate_update({"wlan_bands": ["6g", "2g", "5g", "2g"]}) == {"wlan_bands": ["2g", "5g", "6g"]}
+
+    @pytest.mark.parametrize("bands", [[], ["7g"], "5g"])
+    def test_validate_update_rejects_invalid_wlan_bands(self, bands) -> None:
+        with pytest.raises(ValueError, match="Invalid WLAN update data"):
+            validate_update({"wlan_bands": bands})
+
+    @pytest.mark.parametrize(
+        ("bands", "legacy"),
+        [(["2g", "5g", "6g"], "both"), (["2g", "5g"], "both"), (["5g", "6g"], "5g"), (["2g"], "2g")],
+    )
+    def test_wlan_bands_derives_matching_legacy_band(self, bands, legacy) -> None:
+        current = {"wlan_band": "both", "wlan_bands": ["2g", "5g"]}
+        assert apply_band_dependencies({"wlan_bands": bands}, current) == {"wlan_bands": bands, "wlan_band": legacy}
+
+    def test_six_ghz_only_leaves_legacy_band_untouched(self) -> None:
+        assert apply_band_dependencies({"wlan_bands": ["6g"]}, {"wlan_band": "5g"}) == {"wlan_bands": ["6g"]}
+
+    def test_legacy_band_alone_preserves_existing_six_ghz(self) -> None:
+        current = {"wlan_band": "both", "wlan_bands": ["2g", "5g", "6g"]}
+        assert apply_band_dependencies({"wlan_band": "5g"}, current) == {
+            "wlan_band": "5g",
+            "wlan_bands": ["5g", "6g"],
+        }
+
+    def test_legacy_band_alone_does_not_add_six_ghz(self) -> None:
+        current = {"wlan_band": "both", "wlan_bands": ["2g", "5g"]}
+        assert apply_band_dependencies({"wlan_band": "2g"}, current) == {"wlan_band": "2g", "wlan_bands": ["2g"]}
+
+    def test_legacy_band_alone_skips_list_on_controllers_without_wlan_bands(self) -> None:
+        assert apply_band_dependencies({"wlan_band": "5g"}, {"wlan_band": "both"}) == {"wlan_band": "5g"}
+        assert apply_band_dependencies({"wlan_band": "5g"}) == {"wlan_band": "5g"}
+
+    def test_conflicting_band_fields_are_rejected(self) -> None:
+        with pytest.raises(ValueError, match="conflicts with wlan_bands"):
+            apply_band_dependencies({"wlan_band": "2g", "wlan_bands": ["5g", "6g"]}, {})
+
+    def test_unknown_legacy_band_points_to_wlan_bands(self) -> None:
+        with pytest.raises(ValueError, match="Use wlan_bands to select 6g"):
+            apply_band_dependencies({"wlan_band": "6g"}, {"wlan_bands": ["5g"]})
+
+    def test_band_dependencies_are_idempotent_and_ignore_unrelated_updates(self) -> None:
+        current = {"wlan_band": "both", "wlan_bands": ["2g", "5g", "6g"]}
+        once = apply_band_dependencies({"wlan_band": "5g"}, current)
+        assert apply_band_dependencies(once, current) == once
+        assert apply_band_dependencies({"enabled": False}, current) == {"enabled": False}
+
+    def test_six_ghz_requires_wpa3(self) -> None:
+        with pytest.raises(ValueError, match="requires WPA3"):
+            validate_band_security({"wlan_bands": ["5g", "6g"]}, {"wpa3_support": False, "wpa3_transition": False})
+        validate_band_security({"wlan_bands": ["5g", "6g"]}, {"wpa3_support": True})
+        validate_band_security({"wlan_bands": ["5g", "6g"]}, {"wpa3_transition": True})
+        validate_band_security({"wlan_bands": ["5g", "6g"], "wpa3_support": True}, {"wpa3_support": False})
+
+    def test_disabling_wpa3_on_a_six_ghz_wlan_is_rejected(self) -> None:
+        current = {"wlan_bands": ["2g", "5g", "6g"], "wpa3_support": True, "wpa3_transition": False}
+        with pytest.raises(ValueError, match="requires WPA3"):
+            validate_band_security({"wpa3_support": False}, current)
+
+    def test_unrelated_update_is_not_blocked_by_existing_inconsistency(self) -> None:
+        current = {"wlan_bands": ["5g", "6g"], "wpa3_support": False}
+        validate_band_security({"enabled": False}, current)
+        # Preserving 6g through the legacy selector is not this update adding 6g.
+        validate_band_security({"wlan_band": "5g"}, current)
+
+    def test_create_validates_six_ghz_and_derives_legacy_band(self) -> None:
+        base = {"name": "SSID", "security": "wpapsk", "x_passphrase": "passphrase1"}
+        with pytest.raises(ValueError, match="requires WPA3"):
+            validate_create({**base, "wlan_bands": ["5g", "6g"]})
+        payload = validate_create({**base, "wlan_bands": ["6g", "5g"], "wpa3_support": True})
+        assert payload["wlan_bands"] == ["5g", "6g"]
+        assert payload["wlan_band"] == "5g"

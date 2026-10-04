@@ -9917,6 +9917,20 @@
             ],
             "title": "Wlan Band"
           },
+          "wlan_bands": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wlan Bands"
+          },
           "wpa3_support": {
             "anyOf": [
               {

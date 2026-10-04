@@ -672,3 +672,39 @@ async def test_update_wlan_injects_manual_minrate_dependencies_into_put():
     assert put_request.data["minrate_ng_data_rate_kbps"] == 6000
     assert put_request.data["minrate_setting_preference"] == "manual"
     assert put_request.data["minrate_ng_enabled"] is True
+
+
+# ---------------------------------------------------------------------------
+# WLAN band list: wlan_band alone must not drop 6GHz
+# ---------------------------------------------------------------------------
+
+
+async def test_update_wlan_legacy_band_keeps_six_ghz_in_put():
+    before = _wlan(wlan_band="both", wlan_bands=["2g", "5g", "6g"], wpa3_support=True)
+    after = _wlan(wlan_band="5g", wlan_bands=["5g", "6g"], wpa3_support=True)
+    conn = _make_connection()
+    conn.request.side_effect = [[before], {}, [after]]
+    result = await NetworkManager(conn).update_wlan(WLAN_ID, {"wlan_band": "5g"})
+
+    put = conn.request.await_args_list[1].args[0]
+    assert put.data["wlan_band"] == "5g"
+    assert put.data["wlan_bands"] == ["5g", "6g"]
+    assert result.success is True
+
+
+async def test_update_wlan_reports_six_ghz_dropped_by_controller():
+    before = _wlan(wlan_band="5g", wlan_bands=["5g"], wpa3_support=True)
+    after = _wlan(wlan_band="5g", wlan_bands=["5g"], wpa3_support=True)  # controller ignored the list
+    conn = _make_connection()
+    conn.request.side_effect = [[before], {}, [after]]
+    result = await NetworkManager(conn).update_wlan(WLAN_ID, {"wlan_bands": ["5g", "6g"]})
+    assert result.success is False
+
+
+async def test_update_wlan_rejects_six_ghz_without_wpa3_before_any_write():
+    before = _wlan(wlan_band="5g", wlan_bands=["5g"], wpa3_support=False, wpa3_transition=False)
+    conn = _make_connection()
+    conn.request.side_effect = [[before]]
+    with pytest.raises(ValueError, match="requires WPA3"):
+        await NetworkManager(conn).update_wlan(WLAN_ID, {"wlan_bands": ["5g", "6g"]})
+    assert conn.request.await_count == 1  # the read only; no PUT

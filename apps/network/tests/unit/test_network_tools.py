@@ -1036,3 +1036,113 @@ class TestUpdateNetworkIpv6Preview:
 
         warnings = result.get("warnings") or []
         assert not any("delegated prefix" in w for w in warnings), result
+
+
+class TestUpdateWlanBands:
+    """wlan_bands selects 6GHz; wlan_band alone must not silently drop it."""
+
+    CURRENT = {
+        "_id": "w1",
+        "name": "SSID",
+        "wlan_band": "both",
+        "wlan_bands": ["2g", "5g", "6g"],
+        "wpa3_support": True,
+        "wpa3_transition": True,
+    }
+
+    @pytest.mark.asyncio
+    async def test_wlan_bands_is_accepted_and_previewed(self):
+        current = {**self.CURRENT, "wlan_band": "5g", "wlan_bands": ["5g"]}
+        with patch("unifi_network_mcp.tools.network.network_manager") as mock_mgr:
+            mock_mgr.get_wlan_details = AsyncMock(return_value=current)
+            mock_mgr.update_wlan = AsyncMock()
+
+            from unifi_network_mcp.tools.network import update_wlan
+
+            result = await update_wlan("w1", {"wlan_bands": ["2g", "5g", "6g"]}, confirm=False)
+
+        assert result["success"] is True, result
+        assert result["preview"]["current"]["wlan_bands"] == ["5g"]
+        assert result["preview"]["proposed"]["wlan_bands"] == ["2g", "5g", "6g"]
+        assert result["preview"]["proposed"]["wlan_band"] == "both"
+        mock_mgr.update_wlan.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_legacy_band_preview_shows_wlan_bands_and_keeps_six_ghz(self):
+        with patch("unifi_network_mcp.tools.network.network_manager") as mock_mgr:
+            mock_mgr.get_wlan_details = AsyncMock(return_value=dict(self.CURRENT))
+            mock_mgr.update_wlan = AsyncMock()
+
+            from unifi_network_mcp.tools.network import update_wlan
+
+            result = await update_wlan("w1", {"wlan_band": "5g"}, confirm=False)
+
+        assert result["preview"]["current"]["wlan_bands"] == ["2g", "5g", "6g"]
+        assert result["preview"]["proposed"]["wlan_bands"] == ["5g", "6g"]
+        assert result["preview"]["proposed"]["wlan_band"] == "5g"
+
+    @pytest.mark.asyncio
+    async def test_confirmed_legacy_band_sends_consistent_band_list(self):
+        after = {**self.CURRENT, "wlan_band": "5g", "wlan_bands": ["5g", "6g"]}
+        with patch("unifi_network_mcp.tools.network.network_manager") as mock_mgr:
+            mock_mgr.get_wlan_details = AsyncMock(return_value=dict(self.CURRENT))
+            mock_mgr.update_wlan = AsyncMock(
+                return_value=verify_write(
+                    operation="update",
+                    requested={"wlan_band": "5g", "wlan_bands": ["5g", "6g"]},
+                    before=self.CURRENT,
+                    after=after,
+                )
+            )
+            mock_mgr._connection.site = "default"
+
+            from unifi_network_mcp.tools.network import update_wlan
+
+            result = await update_wlan("w1", {"wlan_band": "5g"}, confirm=True)
+
+        assert result["success"] is True, result
+        assert mock_mgr.update_wlan.call_args[0][1] == {"wlan_band": "5g", "wlan_bands": ["5g", "6g"]}
+
+    @pytest.mark.asyncio
+    async def test_six_ghz_without_wpa3_is_rejected_before_preview_or_write(self):
+        current = {
+            **self.CURRENT,
+            "wlan_band": "5g",
+            "wlan_bands": ["5g"],
+            "wpa3_support": False,
+            "wpa3_transition": False,
+        }
+        with patch("unifi_network_mcp.tools.network.network_manager") as mock_mgr:
+            mock_mgr.get_wlan_details = AsyncMock(return_value=current)
+            mock_mgr.update_wlan = AsyncMock()
+
+            from unifi_network_mcp.tools.network import update_wlan
+
+            for confirm in (False, True):
+                result = await update_wlan("w1", {"wlan_bands": ["5g", "6g"]}, confirm=confirm)
+                assert result["success"] is False
+                assert "requires WPA3" in result["error"]
+        mock_mgr.update_wlan.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_conflicting_band_fields_are_rejected(self):
+        with patch("unifi_network_mcp.tools.network.network_manager") as mock_mgr:
+            mock_mgr.get_wlan_details = AsyncMock(return_value=dict(self.CURRENT))
+
+            from unifi_network_mcp.tools.network import update_wlan
+
+            result = await update_wlan("w1", {"wlan_band": "2g", "wlan_bands": ["5g", "6g"]}, confirm=False)
+
+        assert result["success"] is False
+        assert "conflicts with wlan_bands" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_create_wlan_rejects_six_ghz_without_wpa3(self):
+        from unifi_network_mcp.tools.network import create_wlan
+
+        result = await create_wlan(
+            {"name": "SSID", "security": "wpapsk", "x_passphrase": "wifi-secret", "wlan_bands": ["5g", "6g"]},
+            confirm=False,
+        )
+        assert result["success"] is False
+        assert "requires WPA3" in result["error"]

@@ -27,6 +27,8 @@ from unifi_core.network.models.networks import MDNS_ENABLED_DESCRIPTION, validat
 from unifi_core.network.models.networks import validate_create as validate_network_create
 from unifi_core.network.models.networks import validate_update as validate_network_update
 from unifi_core.network.models.vpn import is_vpn_network
+from unifi_core.network.models.wlans import apply_band_dependencies as apply_wlan_band_dependencies
+from unifi_core.network.models.wlans import validate_band_security as validate_wlan_band_security
 from unifi_core.network.models.wlans import validate_create as validate_wlan_create
 from unifi_core.network.models.wlans import validate_update as validate_wlan_update
 from unifi_core.network.read_views import shape_network_details, shape_network_list, shape_wlan_list
@@ -882,7 +884,8 @@ async def get_wlan_details(
     "roaming_assistant_6e_enabled (bool), roaming_assistant_6e_rssi (int dBm, 6GHz kick threshold e.g. -88). "
     "Access control: mac_filter_enabled (bool), mac_filter_policy ('allow'/'deny'), "
     "mac_filter_list (list of MAC strings), l2_isolation (bool). "
-    "Radio: wlan_band ('both'/'2g'/'5g'), multicast_enhance_enabled (bool), "
+    "Radio: wlan_bands (list of '2g'/'5g'/'6g'; '6g' requires WPA3), wlan_band (legacy 'both'/'2g'/'5g'; "
+    "cannot select 6GHz and keeps an existing '6g'), multicast_enhance_enabled (bool), "
     "dtim_mode ('default'/'custom'), dtim_na (int 1-255), dtim_ng (int 1-255), "
     "minrate_setting_preference ('auto'/'manual'), minrate_ng_enabled (bool), minrate_ng_data_rate_kbps (int), "
     "minrate_na_enabled (bool), minrate_na_data_rate_kbps (int). "
@@ -954,6 +957,14 @@ async def update_wlan(
     if not current:
         return {"success": False, "error": "WLAN not found"}
 
+    # Expand band changes against current state so the preview shows the full
+    # wlan_band/wlan_bands effect, and reject 6GHz without WPA3 before any write.
+    try:
+        validated_data = apply_wlan_band_dependencies(validated_data, current)
+        validate_wlan_band_security(validated_data, current)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+
     if not confirm:
         return redact_sensitive_fields(
             update_preview(
@@ -1009,7 +1020,7 @@ async def create_wlan(
     wlan_data: Annotated[
         Dict[str, Any],
         Field(
-            description="WLAN configuration dict. Required: name (SSID string), security ('open'/'wpa-psk'/'wpa2-psk'). Required if security != 'open': x_passphrase (password). Optional: enabled (bool, default true), hide_ssid (bool), guest_policy (controller-dependent; current versions may silently ignore it and report it as dropped), usergroup_id, networkconf_id (network to associate). Roaming: rrm_enabled (bool, 802.11k neighbour reports), roaming_assistant_na_enabled (bool), roaming_assistant_na_rssi (int dBm, 5GHz kick threshold e.g. -77), roaming_assistant_6e_enabled (bool), roaming_assistant_6e_rssi (int dBm, 6GHz kick threshold e.g. -88). Scheduling: schedule_enabled (bool), schedule_reversed (bool), schedule (list[str]), schedule_with_duration (list of objects with duration_minutes, optional name, start_days_of_week, start_hour, start_minute)"
+            description="WLAN configuration dict. Required: name (SSID string), security ('open'/'wpa-psk'/'wpa2-psk'). Required if security != 'open': x_passphrase (password). Optional: enabled (bool, default true), hide_ssid (bool), guest_policy (controller-dependent; current versions may silently ignore it and report it as dropped), usergroup_id, networkconf_id (network to associate). Roaming: rrm_enabled (bool, 802.11k neighbour reports), roaming_assistant_na_enabled (bool), roaming_assistant_na_rssi (int dBm, 5GHz kick threshold e.g. -77), roaming_assistant_6e_enabled (bool), roaming_assistant_6e_rssi (int dBm, 6GHz kick threshold e.g. -88). Radio: wlan_bands (list of '2g'/'5g'/'6g'; '6g' requires wpa3_support or wpa3_transition). Scheduling: schedule_enabled (bool), schedule_reversed (bool), schedule (list[str]), schedule_with_duration (list of objects with duration_minutes, optional name, start_days_of_week, start_hour, start_minute)"
         ),
     ],
     confirm: Annotated[
