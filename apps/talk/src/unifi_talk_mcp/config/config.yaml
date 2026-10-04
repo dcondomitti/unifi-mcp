@@ -1,0 +1,59 @@
+unifi:
+  host: ${oc.env:UNIFI_TALK_HOST,""}
+  username: ${oc.env:UNIFI_TALK_USERNAME,""}
+  password: ${oc.env:UNIFI_TALK_PASSWORD,""}
+  port: ${oc.env:UNIFI_TALK_PORT,443}
+  verify_ssl: ${oc.env:UNIFI_TALK_VERIFY_SSL,false}
+
+server:
+  host: ${oc.env:UNIFI_MCP_HOST,127.0.0.1}
+  port: ${oc.env:UNIFI_MCP_PORT,3003}
+  log_level: INFO
+
+  # Tool registration mode
+  # Options: eager, lazy, meta_only
+  # - eager: Register all tools immediately - Best for dev console, automation
+  # - lazy: Register meta-tools, load others on-demand - RECOMMENDED for LLMs
+  # - meta_only: Register only meta-tools, manual discovery - Maximum context savings
+  tool_registration_mode: ${oc.env:UNIFI_TOOL_REGISTRATION_MODE,lazy}
+
+  # Tool filtering (optional, for eager mode)
+  #
+  # enabled_categories: Only load tools from these categories (module names in src/tools/)
+  #   Valid values:
+  #     - system    # Application info, dashboard, settings, usage
+  #     - devices   # Phones and third-party SIP devices
+  #     - users     # Users, extensions, assigned numbers
+  #     - numbers   # Phone numbers and blocked callers
+  #     - calls     # Call log, call flow, voicemail, transcripts
+  #     - callflow  # Ring groups, smart attendant, queues, parking lots, contacts
+  #   Example: "calls,system" or ["calls", "system"]
+  #
+  # enabled_tools: Only register these specific tools (use with enabled_categories or alone)
+  #   Example: "talk_list_devices,talk_list_calls" or ["talk_list_devices", "talk_list_calls"]
+  #
+  # If neither is set, all tools are registered (default behavior)
+  enabled_categories: ${oc.env:UNIFI_ENABLED_CATEGORIES,null}
+  enabled_tools: ${oc.env:UNIFI_ENABLED_TOOLS,null}
+
+  http:
+    enabled: ${oc.env:UNIFI_MCP_HTTP_ENABLED,false}
+    force: ${oc.env:UNIFI_MCP_HTTP_FORCE,false}
+    transport: ${oc.env:UNIFI_MCP_HTTP_TRANSPORT,streamable-http}
+  diagnostics:
+    enabled: ${oc.env:UNIFI_MCP_DIAGNOSTICS,false}
+    log_tool_args: ${oc.env:UNIFI_MCP_DIAG_LOG_TOOL_ARGS,true}
+    log_tool_result: ${oc.env:UNIFI_MCP_DIAG_LOG_TOOL_RESULT,true}
+    max_payload_chars: ${oc.env:UNIFI_MCP_DIAG_MAX_PAYLOAD,2000}
+
+policy:
+  response:
+    redact_sensitive_fields: ${oc.env:UNIFI_TALK_REDACT_SENSITIVE_FIELDS,true}
+    mcp_content_mode: ${oc.env:UNIFI_TALK_MCP_CONTENT_MODE,adaptive}
+
+# Permissions are controlled via environment variables:
+#   UNIFI_TOOL_PERMISSION_MODE=confirm|bypass (default: confirm)
+#   UNIFI_POLICY_<ACTION>=true|false (global policy gates)
+#   UNIFI_POLICY_<SERVER>_<ACTION>=true|false (per-server)
+#   UNIFI_POLICY_<SERVER>_<CATEGORY>_<ACTION>=true|false (per-category)
+# See documentation for details.

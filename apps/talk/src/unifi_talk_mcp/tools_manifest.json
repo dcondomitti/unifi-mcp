@@ -1,0 +1,2281 @@
+{
+  "count": 27,
+  "generated_by": "scripts/generate_tool_manifest.py",
+  "module_map": {
+    "talk_get_call_flow": "unifi_talk_mcp.tools.calls",
+    "talk_get_call_transcript": "unifi_talk_mcp.tools.calls",
+    "talk_get_dashboard": "unifi_talk_mcp.tools.system",
+    "talk_get_device": "unifi_talk_mcp.tools.devices",
+    "talk_get_service_health": "unifi_talk_mcp.tools.system",
+    "talk_get_settings": "unifi_talk_mcp.tools.system",
+    "talk_get_switchboard": "unifi_talk_mcp.tools.callflow",
+    "talk_get_system_info": "unifi_talk_mcp.tools.system",
+    "talk_get_usage": "unifi_talk_mcp.tools.system",
+    "talk_get_voicemail": "unifi_talk_mcp.tools.calls",
+    "talk_list_all_calls": "unifi_talk_mcp.tools.calls",
+    "talk_list_blocked_numbers": "unifi_talk_mcp.tools.numbers",
+    "talk_list_call_queues": "unifi_talk_mcp.tools.callflow",
+    "talk_list_calls": "unifi_talk_mcp.tools.calls",
+    "talk_list_contacts": "unifi_talk_mcp.tools.callflow",
+    "talk_list_devices": "unifi_talk_mcp.tools.devices",
+    "talk_list_groups": "unifi_talk_mcp.tools.callflow",
+    "talk_list_numbers": "unifi_talk_mcp.tools.numbers",
+    "talk_list_parking_lots": "unifi_talk_mcp.tools.callflow",
+    "talk_list_recording_rules": "unifi_talk_mcp.tools.callflow",
+    "talk_list_ring_flows": "unifi_talk_mcp.tools.callflow",
+    "talk_list_users": "unifi_talk_mcp.tools.users"
+  },
+  "note": "Auto-generated with full schemas from tool decorators. Do not edit manually.",
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "auth_method": "local_only",
+      "description": "Execute multiple UniFi Talk tools in parallel through the indirect execution wrapper. Returns job IDs; use talk_batch_status to check progress.",
+      "name": "talk_batch",
+      "schema": {
+        "input": {
+          "properties": {
+            "operations": {
+              "description": "Array of {tool, arguments} objects using names from talk_tool_index in lazy mode, or known domain tool names in meta-only mode",
+              "items": {
+                "properties": {
+                  "arguments": {
+                    "description": "Tool parameters matching the domain tool's input schema",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "description": "Tool name from talk_tool_index in lazy mode, or a known domain tool name in meta-only mode",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "operations"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "properties": {
+            "errors": {
+              "description": "Errors for operations that failed to start",
+              "type": "array"
+            },
+            "jobs": {
+              "description": "Started jobs with index, tool name, and jobId",
+              "items": {
+                "properties": {
+                  "index": {
+                    "type": "integer"
+                  },
+                  "jobId": {
+                    "type": "string"
+                  },
+                  "tool": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "title": "UniFi Talk Batch Execute"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Check status of UniFi Talk batch operations. Returns status, result (if done), or error (if failed).",
+      "name": "talk_batch_status",
+      "schema": {
+        "input": {
+          "properties": {
+            "jobId": {
+              "description": "Single job ID to check",
+              "type": "string"
+            },
+            "jobIds": {
+              "description": "Multiple job IDs to check at once",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "properties": {
+            "error": {
+              "description": "Error message (present when status is 'error')",
+              "type": "string"
+            },
+            "jobs": {
+              "description": "Status of multiple jobs (when using jobIds parameter)",
+              "type": "array"
+            },
+            "result": {
+              "description": "Job result (present when status is 'done')"
+            },
+            "status": {
+              "description": "Current job status",
+              "enum": [
+                "running",
+                "done",
+                "error",
+                "unknown"
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "title": "UniFi Talk Batch Status"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "auth_method": "local_only",
+      "description": "Execute a UniFi Talk tool (phones, extensions, phone numbers, call history, voicemail, ring groups, and smart attendants) by name for lazy/meta-only workflows.",
+      "name": "talk_execute",
+      "schema": {
+        "input": {
+          "properties": {
+            "arguments": {
+              "description": "Tool parameters matching the domain tool's input schema",
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "tool": {
+              "description": "Domain tool name (e.g. 'talk_list_*'); discover it through talk_tool_index in lazy mode",
+              "type": "string"
+            }
+          },
+          "required": [
+            "tool"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "description": "Result from the executed UniFi Talk tool",
+          "type": "object"
+        }
+      },
+      "title": "UniFi Talk Execute Tool"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns the ordered event timeline for one call (started, endpoints tried, accepted, sent to voicemail, voicemail recorded, hangup). A call_sent_to_voicemail or vm_msg_recorded event means talk_get_voicemail will return data for the same call_id.",
+      "name": "talk_get_call_flow",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "call_id": {
+              "description": "Call uuid as returned by talk_list_calls.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "call_id"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Call Flow"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns the AI transcript for a call when call transcription is enabled and a transcript exists; otherwise transcript is null.",
+      "name": "talk_get_call_transcript",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "call_id": {
+              "description": "Call uuid as returned by talk_list_calls.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "call_id"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Call Transcript"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns the Talk dashboard summary: console name, whether the calling service is enabled, Talk and UniFi OS versions, and total/online/offline phone counts.",
+      "name": "talk_get_dashboard",
+      "permission_action": "read",
+      "permission_category": "system",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Dashboard"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns one Talk device by MAC address: name, model, status, IP, firmware, extension, SIP registration state, and assigned user.",
+      "name": "talk_get_device",
+      "permission_action": "read",
+      "permission_category": "device",
+      "schema": {
+        "input": {
+          "properties": {
+            "mac": {
+              "description": "Device MAC address as returned by talk_list_devices (any separator style).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "mac"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Device"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns Talk service health as a time series of buckets, each with a start/end timestamp, a health score, and any health events. Use to spot calling-service degradation.",
+      "name": "talk_get_service_health",
+      "permission_action": "read",
+      "permission_category": "system",
+      "schema": {
+        "input": {
+          "properties": {
+            "preset_time": {
+              "description": "Time window preset as used by the Talk dashboard. '1D' (last day) is the verified value.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Service Health"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns global Talk settings: voicemail (enabled, timeout, email/Slack/Teams delivery), call recording, AI transcription, caller-ID passthrough, audio codecs, SIP/NAT options, and emergency address status.",
+      "name": "talk_get_settings",
+      "permission_action": "read",
+      "permission_category": "system",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Settings"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns the smart attendant (auto-attendant/IVR) tree as nodes keyed by node id. Each node has a type, title or group name, extension, greeting settings, and childNodeIds linking to the next menu level.",
+      "name": "talk_get_switchboard",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Switchboard"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns the UniFi Talk application version, host console model, region, and feature availability (call recording storage, smart attendant, SIP gateways). Use for a basic capability check.",
+      "name": "talk_get_system_info",
+      "permission_action": "read",
+      "permission_category": "system",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get System Info"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns Talk usage counters for the current billing period: call minutes, SMS, CNAM lookups, transcriptions, and softphone usage.",
+      "name": "talk_get_usage",
+      "permission_action": "read",
+      "permission_category": "system",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Usage"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Returns voicemail metadata for a call that went to voicemail: received and read times, duration, the extension it was left for, and the receiving user. Returns an error for calls with no voicemail. Audio is not returned.",
+      "name": "talk_get_voicemail",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "call_id": {
+              "description": "Call uuid as returned by talk_list_calls.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "call_id"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "Get Voicemail"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists calls across the whole Talk system, newest first, with direction, status, time, duration, numbers, caller name, who answered, and has_voicemail. Returns 50 calls per zero-based page; total_count is the system-wide call count. Use talk_list_calls for one user's history.",
+      "name": "talk_list_all_calls",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "page": {
+              "description": "Zero-based page number.",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List All Calls"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists caller numbers that are blocked from reaching the Talk system.",
+      "name": "talk_list_blocked_numbers",
+      "permission_action": "read",
+      "permission_category": "number",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Blocked Numbers"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists Talk call-center queues.",
+      "name": "talk_list_call_queues",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Call Queues"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists one user's call history, newest first, with direction, status, time, duration, numbers, recording flag, and quality score. user_id is the unique_id from talk_list_users. Paginate with limit/offset; total_count is the user's full call count. Use talk_list_all_calls for every user.",
+      "name": "talk_list_calls",
+      "permission_action": "read",
+      "permission_category": "call",
+      "schema": {
+        "input": {
+          "properties": {
+            "limit": {
+              "description": "Calls per page (1-100).",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "offset": {
+              "description": "Number of calls to skip, for pagination.",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "user_id": {
+              "description": "User unique_id as returned by talk_list_users.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "user_id"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Calls"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists shared contacts stored in Talk.",
+      "name": "talk_list_contacts",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Contacts"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists all Talk phones and third-party SIP devices with name, model, connection status, firmware, extension, SIP registration state, and assigned user.",
+      "name": "talk_list_devices",
+      "permission_action": "read",
+      "permission_category": "device",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Devices"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists Talk ring groups with members, routed numbers and extensions, ring strategy, and the no-answer action.",
+      "name": "talk_list_groups",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Groups"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists the phone numbers on the Talk account with plan, SMS capability, usage, and the ring group or smart attendant each number routes to.",
+      "name": "talk_list_numbers",
+      "permission_action": "read",
+      "permission_category": "number",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Numbers"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists Talk call parking lots.",
+      "name": "talk_list_parking_lots",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Parking Lots"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists Talk call recording rules: direction, numbers covered, internal-call recording, and the recording announcement.",
+      "name": "talk_list_recording_rules",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Recording Rules"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists Talk ring flows (per-user call routing sequences).",
+      "name": "talk_list_ring_flows",
+      "permission_action": "read",
+      "permission_category": "callflow",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Ring Flows"
+    },
+    {
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Lists users with their Talk extension, direct numbers, outbound caller ID, voicemail state, ring group membership, and assigned phones. The unique_id of each user is the user_id accepted by talk_list_calls.",
+      "name": "talk_list_users",
+      "permission_action": "read",
+      "permission_category": "user",
+      "schema": {
+        "input": {
+          "properties": {},
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "description": "Structured view of the existing UniFi MCP tool response contract.",
+          "properties": {
+            "data": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Successful result payload.",
+              "title": "Data"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Actionable error message for handled failures.",
+              "title": "Error"
+            },
+            "preview": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Mutation preview payload returned before confirmation.",
+              "title": "Preview"
+            },
+            "requires_confirmation": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when a mutation preview requires caller confirmation.",
+              "title": "Requires Confirmation"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "True when the tool call succeeded; false for handled errors.",
+              "title": "Success"
+            }
+          },
+          "title": "UniFiToolResponse",
+          "type": "object"
+        }
+      },
+      "title": "List Users"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "auth_method": "local_only",
+      "description": "Load UniFi Talk tools (phones, extensions, phone numbers, call history, voicemail, ring groups, and smart attendants) for direct MCP access. Advanced lazy-mode extension that emits notifications/tools/list_changed when tools are loaded.",
+      "name": "talk_load_tools",
+      "schema": {
+        "input": {
+          "properties": {
+            "tools": {
+              "description": "Tool names to load (from talk_tool_index)",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "tools"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "properties": {
+            "errors": {
+              "description": "Errors for tools that failed to load",
+              "type": "array"
+            },
+            "loaded": {
+              "description": "Successfully loaded tool names",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "message": {
+              "description": "Summary message",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "title": "UniFi Talk Load Tools"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "auth_method": "local_only",
+      "description": "Discover UniFi Talk tools (phones, extensions, phone numbers, call history, voicemail, ring groups, and smart attendants) through the compact tool index. The catalog is manifest-backed in lazy mode; in meta-only mode it starts with registered meta-tools and expands after domain modules execute. Standard MCP clients should prefer tools/list when it exposes the needed tools.",
+      "name": "talk_tool_index",
+      "schema": {
+        "input": {
+          "properties": {
+            "category": {
+              "description": "Filter to one category. Valid values are returned in the 'categories' field of every response.",
+              "type": "string"
+            },
+            "include_schemas": {
+              "default": false,
+              "description": "Include full input/output schemas per tool. Defaults to false \u2014 set true with a name, category or search filter to get parameter details for specific tools.",
+              "type": "boolean"
+            },
+            "name": {
+              "description": "Exact, case-sensitive tool name. Cannot be combined with category or search. Unknown names return an empty index.",
+              "type": "string"
+            },
+            "search": {
+              "description": "Case-insensitive token search over tool names and descriptions. Ignores common words and one-character terms; multi-word queries require at least half of usable terms (minimum two). Terms of four or more characters also match token prefixes. Results are ranked by exact phrase and name matches, with at most 20 returned. An empty string applies no filter; a non-empty query with no usable terms returns no tools.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "properties": {
+            "categories": {
+              "description": "All available category names (use as values for the category filter)",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "count": {
+              "description": "Number of tools returned",
+              "type": "integer"
+            },
+            "filtered": {
+              "description": "True when name, category or search filter was applied",
+              "type": "boolean"
+            },
+            "tools": {
+              "description": "Matching tools with name and description (plus schemas if include_schemas)",
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "title": "UniFi Talk Tool Index"
+    }
+  ]
+}

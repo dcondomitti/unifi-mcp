@@ -1,0 +1,1 @@
+"""UniFi Talk field models."""
