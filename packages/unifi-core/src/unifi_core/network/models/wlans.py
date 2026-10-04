@@ -23,6 +23,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from unifi_core.mac import normalize_mac
 
+_BAND_ORDER = ("2g", "5g", "6g")
+_BANDS_BY_LEGACY_BAND = {"both": ["2g", "5g"], "2g": ["2g"], "5g": ["5g"]}
+
 # ---------------------------------------------------------------------------
 # Pydantic domain model
 # ---------------------------------------------------------------------------
@@ -211,8 +214,28 @@ class Wlan(BaseModel):
     )
     wlan_band: Optional[str] = Field(
         default=None,
-        description="Restrict WLAN to specific band: both, 2g, 5g",
+        description=(
+            "Legacy 2.4/5GHz band selector: both, 2g, 5g. It cannot express 6GHz; prefer wlan_bands. "
+            "Setting it alone keeps an existing 6GHz entry in wlan_bands"
+        ),
     )
+    wlan_bands: Optional[List[Literal["2g", "5g", "6g"]]] = Field(
+        default=None,
+        min_length=1,
+        description=(
+            "Bands the WLAN broadcasts on, any of 2g, 5g, 6g (e.g. ['2g', '5g', '6g']). "
+            "6g requires WPA3 (wpa3_support or wpa3_transition)"
+        ),
+    )
+
+    @field_validator("wlan_bands")
+    @classmethod
+    def _canonical_wlan_bands(cls, v):
+        """Deduplicate and order bands the way the controller stores them."""
+        if v is None:
+            return v
+        return [band for band in _BAND_ORDER if band in v]
+
     multicast_enhance_enabled: Optional[bool] = Field(
         default=None,
         description="Convert multicast to unicast per client (controller field: mcastenhance_enabled)",
@@ -346,6 +369,7 @@ def from_controller(raw: Any) -> Wlan:
         schedule_with_duration=_get(raw, "schedule_with_duration"),
         l2_isolation=_get(raw, "l2_isolation"),
         wlan_band=_get(raw, "wlan_band"),
+        wlan_bands=_get(raw, "wlan_bands"),
         multicast_enhance_enabled=_get(raw, "mcastenhance_enabled"),
         dtim_mode=_get(raw, "dtim_mode"),
         dtim_na=_get(raw, "dtim_na"),
@@ -438,6 +462,80 @@ def apply_update_dependencies(fields: Dict[str, Any]) -> Dict[str, Any]:
     return patched
 
 
+def _legacy_band(bands: List[str]) -> Optional[str]:
+    """Project a band list onto the legacy 2.4/5GHz selector; None for 6GHz-only."""
+    has_2g, has_5g = "2g" in bands, "5g" in bands
+    if has_2g and has_5g:
+        return "both"
+    if has_2g:
+        return "2g"
+    if has_5g:
+        return "5g"
+    return None
+
+
+def apply_band_dependencies(fields: Dict[str, Any], current: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Keep ``wlan_band`` and ``wlan_bands`` consistent in one controller mutation.
+
+    The controller stores both: ``wlan_band`` (both/2g/5g) and the ``wlan_bands``
+    list that also carries 6GHz. Changing ``wlan_band`` alone makes the
+    controller rebuild the list from it, silently dropping ``6g``. So:
+
+    - ``wlan_bands`` given: derive the matching legacy ``wlan_band``.
+    - only ``wlan_band`` given: derive ``wlan_bands`` from it, preserving an
+      existing ``6g`` entry. Skipped when the current WLAN has no
+      ``wlan_bands`` list (controllers that predate the field).
+
+    Idempotent: applying it to its own output changes nothing.
+    """
+    if "wlan_bands" in fields and fields["wlan_bands"] is not None:
+        legacy = _legacy_band(fields["wlan_bands"])
+        requested_legacy = fields.get("wlan_band")
+        if requested_legacy is not None and legacy is not None and requested_legacy != legacy:
+            raise ValueError(
+                f"wlan_band '{requested_legacy}' conflicts with wlan_bands {fields['wlan_bands']}; "
+                "pass wlan_bands alone"
+            )
+        if legacy is None or requested_legacy == legacy:
+            return fields
+        return {**fields, "wlan_band": legacy}
+    if fields.get("wlan_band") is not None:
+        if fields["wlan_band"] not in _BANDS_BY_LEGACY_BAND:
+            raise ValueError("wlan_band must be one of: both, 2g, 5g. Use wlan_bands to select 6g")
+        current_bands = (current or {}).get("wlan_bands")
+        if not isinstance(current_bands, list):
+            return fields
+        bands = list(_BANDS_BY_LEGACY_BAND[fields["wlan_band"]])
+        if "6g" in current_bands:
+            bands.append("6g")
+        return {**fields, "wlan_bands": bands}
+    return fields
+
+
+_BAND_SECURITY_FIELDS = frozenset({"wlan_bands", "wpa3_support", "wpa3_transition"})
+
+
+def validate_band_security(fields: Dict[str, Any], current: Optional[Dict[str, Any]] = None) -> None:
+    """Reject a mutation that would leave 6GHz enabled without WPA3.
+
+    6GHz only permits WPA3. Checked against the merged result, and only when
+    the mutation itself touches the band list or a WPA3 flag, so an unrelated
+    update to an already-inconsistent WLAN is not blocked.
+    """
+    if not _BAND_SECURITY_FIELDS & set(fields):
+        return
+    merged = {**(current or {}), **fields}
+    bands = merged.get("wlan_bands")
+    if not isinstance(bands, list) or "6g" not in bands:
+        return
+    if merged.get("wpa3_support") is True or merged.get("wpa3_transition") is True:
+        return
+    raise ValueError(
+        "6GHz (wlan_bands includes '6g') requires WPA3: set wpa3_support to true "
+        "(or wpa3_transition for mixed WPA2/WPA3), or remove '6g' from wlan_bands"
+    )
+
+
 def _validate_payload(fields: Dict[str, Any], *, operation: str) -> tuple[Wlan, set[str]]:
     if not isinstance(fields, dict) or not fields:
         payload_name = "wlan_data" if operation == "create" else "update_data"
@@ -476,6 +574,8 @@ def validate_create(fields: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("'x_passphrase' is required when security is not 'open'")
     payload = to_controller_create(model)
     payload.setdefault("enabled", True)
+    payload = apply_band_dependencies(payload)
+    validate_band_security(payload)
     return payload
 
 

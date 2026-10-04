@@ -81,6 +81,7 @@ class Wlan:
     schedule_with_duration: list[WlanScheduleWindow] | None
     l2_isolation: bool | None
     wlan_band: str | None
+    wlan_bands: list[str] | None
     multicast_enhance_enabled: bool | None
     dtim_mode: str | None
     dtim_na: int | None
@@ -156,6 +157,7 @@ class Wlan:
             ),
             l2_isolation=raw.get("l2_isolation"),
             wlan_band=raw.get("wlan_band"),
+            wlan_bands=raw.get("wlan_bands"),
             multicast_enhance_enabled=raw.get("mcastenhance_enabled"),
             dtim_mode=raw.get("dtim_mode"),
             dtim_na=raw.get("dtim_na"),

@@ -19,7 +19,9 @@ from unifi_core.network.models.networks import (
     validate_wan_dns_state,
 )
 from unifi_core.network.models.vpn import is_vpn_network
+from unifi_core.network.models.wlans import apply_band_dependencies as apply_wlan_band_dependencies
 from unifi_core.network.models.wlans import apply_update_dependencies as apply_wlan_update_dependencies
+from unifi_core.network.models.wlans import validate_band_security as validate_wlan_band_security
 from unifi_core.write_verification import WriteVerificationResult, failed_write, noop_write, verify_write
 
 logger = logging.getLogger("unifi-network-mcp")
@@ -521,6 +523,12 @@ class NetworkManager:
             #    rate mode is "manual" and the band is enabled; inject those
             #    dependencies so a rate-only update actually persists.
             update_data = _apply_minrate_dependencies(update_data)
+
+            #    Changing wlan_band alone makes the controller rebuild wlan_bands
+            #    and drop 6GHz; send both, consistent, and refuse 6GHz without WPA3.
+            #    Enforced here so REST/GraphQL callers get it as well as MCP.
+            update_data = apply_wlan_band_dependencies(update_data, existing_wlan)
+            validate_wlan_band_security(update_data, existing_wlan)
 
             # 3. Merge updates (deep merge preserves nested sub-objects)
             merged_data = deep_merge(existing_wlan, update_data)
